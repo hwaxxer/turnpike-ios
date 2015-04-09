@@ -18,6 +18,19 @@
 #define AMPERSAND @"&"
 #define EQUALS @"="
 
+@interface NSString (Turnpike)
+- (NSString *)tp_stringByURLDecoding;
+@end
+@implementation NSString (Turnpike)
+- (NSString *)tp_stringByURLDecoding {
+  NSString *urlDecodedString = CFBridgingRelease(CFURLCreateStringByReplacingPercentEscapesUsingEncoding(NULL,
+                                                                                                         (CFStringRef)self,
+                                                                                                         CFSTR(""),
+                                                                                                         kCFStringEncodingUTF8));
+  return urlDecodedString;
+}
+@end
+
 @implementation TPURIHelper
 
 + (NSURL *)sanitizeURL:(NSURL *)url {
@@ -33,7 +46,7 @@
     NSString *resourcePath = nil;
     
     // Strip out Query String
-    for (int i = inputString.length-1; i >= 0; i--) {
+    for (NSInteger i = inputString.length-1; i >= 0; i--) {
         if ([inputString characterAtIndex:i] == '?') {
             resourcePath = [inputString substringToIndex:i];
             queryString = [accumulatedQueryString copy];
@@ -112,7 +125,7 @@
             continue;
         }
         // Save our key value pair in our dictionary
-        [queryParameters setValue:[keyValuePair objectAtIndex:1] forKey:[keyValuePair objectAtIndex:0]];
+        [queryParameters setValue:[[keyValuePair objectAtIndex:1] tp_stringByURLDecoding] forKey:[keyValuePair objectAtIndex:0]];
     }
     // Return an immutable copy of our parameters
     return [queryParameters copy];
